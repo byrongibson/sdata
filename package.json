@@ -1,0 +1,23 @@
+{
+  "name": "sdata",
+  "private": true,
+  "version": "0.0.0",
+  "description": "RESTful service to secure store user data using password-derived keys",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mirrorx/sdata.git"
+  },
+  "author": "Sean Lavine <sean@mirrorx.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mirrorx/sdata/issues"
+  },
+  "homepage": "https://github.com/mirrorx/sdata",
+  "dependencies": {
+    "restify": "^2.8.4"
+  }
+}
