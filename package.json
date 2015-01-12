@@ -20,5 +20,8 @@
   "dependencies": {
     "restify": "^2.8.4",
     "sdata-crypto": "git+ssh://git@github.com:mirrorx/sdata-crypto"
+  },
+  "devDependencies": {
+    "mocha": "^2.1.0"
   }
 }
