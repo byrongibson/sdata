@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/mirrorx/sdata",
   "dependencies": {
-    "restify": "^2.8.4"
+    "restify": "^2.8.4",
+    "sdata-crypto": "git+ssh://git@github.com:mirrorx/sdata-crypto"
   }
 }
