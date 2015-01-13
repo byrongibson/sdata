@@ -1,5 +1,8 @@
 var restify = require('restify');
 var crypto = require('sdata-crypto');
+//databases
+var redis = require('./db/redis').getClient();
+var pg = require('./db/pg').getClient();
 
 var server = restify.createServer({
   name: 'sData Restful Service',
@@ -21,13 +24,27 @@ server.post('/login/:userId', function(req, res, next) {
 
     crypto.decryptPrivateKey(resp.rows[0].private_key, req.body.password, function(err, privateKey) {
       if (err) return next(new restify.InvalidArgumentError(JSON.stringify(err)));
-      res.send(201, privateKey);
+      // store the private key in redis and return it
+      redis.hmset(req.params.userId, {
+        public_key: resp.rows[0].public_key,
+        private_key: privateKey
+      }, function(err) {
+        if (err) return next(new restify.InvalidArgumentError(JSON.stringify(err)));
+        res.send(201, privateKey);
+      })
     });
   });
 });
 
 server.post('/logout/:userId', function(req, res, next) {
-
+  if (req.params.userId === undefined) {
+    return next(new restify.InvalidArgumentError('UserId must be supplied'));
+  }
+  //delete all entries in redis associated with userId 
+  redis.del(req.params.userId, function(err) {
+    if (err) return next(new restify.InvalidArgumentError(JSON.stringify(err)));
+    res.send(200);
+  })
 });
 
 server.post('/data/:userId/:objectType', function(req, res, next) {
