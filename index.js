@@ -5,17 +5,24 @@ var server = restify.createServer({
   name: 'sData Restful Service',
   version: '1.0.0'
 });
-server.use(restify.acceptParser(server.acceptable));
-server.use(restify.queryParser());
-server.use(restify.bodyParser());
+server.use(restify.acceptParser(server.acceptable))
+  .use(restify.queryParser())
+  .use(restify.bodyParser())
+  .use(restify.fullResponse());
 
 server.post('/login/:userId', function(req, res, next) {
+  if (req.params.userId === undefined) {
+    return next(new restify.InvalidArgumentError('UserId must be supplied'));
+  }
   //get stored keys from postgres user_keys table
   pg.query(sql.getKey, [req.params.userId], function(err, resp) {
-    if (err) {
-      res.send(400, err);
-      return next();
-    }
+    if (err) return next(new restify.InvalidArgumentError(JSON.stringify(err)));
+    else if (!resp || !resp.rows || resp.rows.length < 1) return next(new restify.InvalidArgumentError('No response for userId: ' + userId));
+
+    crypto.decryptPrivateKey(resp.rows[0].private_key, req.body.password, function(err, privateKey) {
+      if (err) return next(new restify.InvalidArgumentError(JSON.stringify(err)));
+      res.send(201, privateKey);
+    });
   });
 });
 
