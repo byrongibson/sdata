@@ -67,10 +67,35 @@ server.post('/data/:userId/:dataType', function(req, res, next) {
   });
 });
 
-server.get('/data/:userId/:data_id');
-server.get('/data/:userId/:data_type');
+server.get('/data/:userId', function(req, res, next) {
+  if (req.params.userId === undefined || req.params.dataType === undefined) return next(new restify.InvalidArgumentError('User id or data type must be supplied'));
+  if (req.query.type === undefined && req.query.id === undefined) return next(new restify.InvalidArgumentError('Type or id query must be supplied'));
+  var sqlToCall, params;
+  if (req.query.type) {
+    sqlToCall = sql.getDataByType;
+    params = [req.params.userId, req.query.type];
+  } else if (req.query.id) {
+    sqlToCall = sql.getDataById;
+    params = [req.params.userId, req.query.id];
+  }
+  redis.hget(req.params.userId, function(err, redisResult) {
+    if (err) return next(new restify.InvalidArgumentError(JSON.stringify(err)));
+    if (!redisResult || !redisResult.private_key) return next(new restify.InvalidArgumentError('Cannot find private key for userId: ' + req.params.userId));
 
-server.get('/data/search/:data_type');
+    pg.query(sql.getDataByType, params, function(err, pgResult) {
+      if (err) return next(new restify.InvalidArgumentError(JSON.stringify(err)));
+      if (!pgResult || !pgResult.rows || !pgResult.rows.length < 1) return next(new restify.InvalidArgumentError('Cannot find data for userId: ' + req.params.userId + ', type: ' + req.params.dataType));
+      var decrypted_data = crypto.decrypt(redisResult.private_key, pgResult.rows[0].encrypted_data);
+      res.send(200, {
+        id: pgResult.rows[0].id,
+        user_id: pgResult.rows[0].user_id,
+        data_type: pgResult.rows[0].data_type,
+        secure: decrypted_data,
+        unsecure: pgResult.rows[0].unsecure_data
+      });
+    })
+  });
+});
 
 server.listen(8080, function() {
   console.log('%s listening at %s', server.name, server.url);
